@@ -1,0 +1,17 @@
+{
+  "name": "DroidGuard AI - Diagnóstico Técnico Pro",
+  "short_name": "DroidGuard",
+  "description": "Herramienta avanzada de diagnóstico y monitoreo de privacidad para Android.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0c",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1055/1055683.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -21,7 +21,14 @@ import {
   ChevronRight,
   AlertCircle,
   Terminal,
-  Wifi
+  Wifi,
+  Download,
+  Share2,
+  Battery,
+  Zap,
+  Monitor,
+  Smartphone,
+  Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
@@ -34,6 +41,89 @@ export default function App() {
   const [vpnActive, setVpnActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'monitor' | 'tools' | 'diagnostico'>('monitor');
+  const [consentAccepted, setConsentAccepted] = useState<boolean>(() => {
+    return localStorage.getItem('droidguard_consent') === 'true';
+  });
+  const [realTimeStats, setRealTimeStats] = useState<any>({
+    battery: 'Cargando...',
+    memory: 'N/A',
+    network: 'N/A',
+    cpuTime: 'N/A',
+    platform: navigator.platform,
+    userAgent: navigator.userAgent,
+    resolution: `${window.screen.width}x${window.screen.height}`
+  });
+
+  useEffect(() => {
+    // Battery Status API
+    if ('getBattery' in navigator) {
+      (navigator as any).getBattery().then((battery: any) => {
+        const updateBattery = () => {
+          setRealTimeStats((prev: any) => ({
+            ...prev,
+            battery: `${Math.round(battery.level * 100)}% ${battery.charging ? '(Cargando)' : ''}`
+          }));
+        };
+        updateBattery();
+        battery.addEventListener('levelchange', updateBattery);
+        battery.addEventListener('chargingchange', updateBattery);
+      });
+    }
+
+    // Network Information API
+    if ('connection' in (navigator as any)) {
+      const conn = (navigator as any).connection;
+      const updateNetwork = () => {
+        setRealTimeStats((prev: any) => ({
+          ...prev,
+          network: `${conn.downlink} Mbps (${conn.effectiveType})`
+        }));
+      };
+      updateNetwork();
+      conn.addEventListener('change', updateNetwork);
+    }
+
+    // Performance Memory (Chrome only)
+    if ((performance as any).memory) {
+      setRealTimeStats((prev: any) => ({
+        ...prev,
+        memory: `${Math.round((performance as any).memory.usedJSHeapSize / 1048576)} MB`
+      }));
+    }
+  }, []);
+
+  const runCpuTest = () => {
+    const start = performance.now();
+    let x = 0;
+    for (let i = 0; i < 10000000; i++) {
+      x += Math.sqrt(i);
+    }
+    const end = performance.now();
+    setRealTimeStats((prev: any) => ({
+      ...prev,
+      cpuTime: `${Math.round(end - start)}ms`
+    }));
+  };
+
+  const exportReport = () => {
+    const report = {
+      timestamp: new Date().toISOString(),
+      device: realTimeStats,
+      processes: processes.map(p => ({ name: p.appName, risk: p.riskLevel })),
+      diagnostics: MOCK_DIAGNOSTICS
+    };
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `droidguard-report-${Date.now()}.json`;
+    a.click();
+  };
+
+  const acceptConsent = () => {
+    localStorage.setItem('droidguard_consent', 'true');
+    setConsentAccepted(true);
+  };
 
   const handleScan = () => {
     setIsScanning(true);
@@ -68,6 +158,43 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0c] text-slate-200 p-4 md:p-8 font-sans selection:bg-blue-500/30">
+      {/* Consent Modal */}
+      <AnimatePresence>
+        {!consentAccepted && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="max-w-xl w-full glass-card rounded-[2.5rem] p-10 border border-blue-500/30 shadow-2xl shadow-blue-600/20"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center mb-8 mx-auto">
+                <Shield className="text-white w-8 h-8" />
+              </div>
+              <h2 className="text-2xl font-bold text-white text-center mb-6">Bienvenido a DroidGuard AI</h2>
+              <div className="space-y-4 text-slate-400 text-sm leading-relaxed mb-8 text-center">
+                <p>
+                  El usuario declara que conoce y acepta que esta herramienta realiza diagnósticos en modo lectura, 
+                  sin modificar archivos del sistema ni ejecutar comandos privilegiados.
+                </p>
+                <p>
+                  El técnico o propietario del equipo asume toda responsabilidad por cualquier acción derivada del uso de la información mostrada. 
+                  No se garantiza la detección de vulnerabilidades avanzadas ni se reemplaza un antivirus nativo.
+                </p>
+                <p className="text-blue-400 font-bold">
+                  Esta herramienta NO tiene acceso a bajo nivel del sistema, solo a las APIs que el navegador expone.
+                </p>
+              </div>
+              <button 
+                onClick={acceptConsent}
+                className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold transition-all active:scale-95 shadow-lg shadow-blue-600/20"
+              >
+                Aceptar y Continuar
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <header className="max-w-5xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div className="flex items-center gap-4">
@@ -268,7 +395,68 @@ export default function App() {
         </>
       ) : activeTab === 'diagnostico' ? (
         <main className="max-w-5xl mx-auto">
+          {/* Real-time Web Diagnostics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="glass-card p-5 rounded-3xl border border-white/5">
+              <div className="flex items-center gap-3 mb-3">
+                <Battery className="text-emerald-400" size={18} />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Batería Web</span>
+              </div>
+              <p className="text-lg font-mono font-bold text-white">{realTimeStats.battery}</p>
+            </div>
+            <div className="glass-card p-5 rounded-3xl border border-white/5">
+              <div className="flex items-center gap-3 mb-3">
+                <Globe className="text-blue-400" size={18} />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Red (Downlink)</span>
+              </div>
+              <p className="text-lg font-mono font-bold text-white">{realTimeStats.network}</p>
+            </div>
+            <div className="glass-card p-5 rounded-3xl border border-white/5">
+              <div className="flex items-center gap-3 mb-3">
+                <Database className="text-purple-400" size={18} />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Memoria JS</span>
+              </div>
+              <p className="text-lg font-mono font-bold text-white">{realTimeStats.memory}</p>
+            </div>
+            <div className="glass-card p-5 rounded-3xl border border-white/5">
+              <div className="flex items-center gap-3 mb-3">
+                <Zap className="text-amber-400" size={18} />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Test CPU</span>
+                <button onClick={runCpuTest} className="ml-auto text-[8px] bg-white/5 px-2 py-1 rounded-md hover:bg-white/10 transition-colors">EJECUTAR</button>
+              </div>
+              <p className="text-lg font-mono font-bold text-white">{realTimeStats.cpuTime}</p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {/* Device Info Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-card rounded-[2rem] p-6 border border-white/5"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                  <Smartphone className="text-blue-400" size={20} />
+                </div>
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Info Navegador</h3>
+              </div>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-slate-500">Plataforma</span>
+                  <span className="text-xs font-bold text-white">{realTimeStats.platform}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-slate-500">Resolución</span>
+                  <span className="text-xs font-bold text-white">{realTimeStats.resolution}</span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-slate-500">User Agent</span>
+                  <span className="text-[10px] font-mono text-slate-400 break-all leading-tight">{realTimeStats.userAgent.substring(0, 100)}...</span>
+                </div>
+              </div>
+            </motion.div>
+
             {MOCK_DIAGNOSTICS.map((section, idx) => (
               <motion.div
                 key={section.title}
@@ -289,7 +477,10 @@ export default function App() {
                 <div className="space-y-4">
                   {section.items.map((item, i) => (
                     <div key={i} className="flex justify-between items-center group">
-                      <span className="text-xs text-slate-500 group-hover:text-slate-400 transition-colors">{item.label}</span>
+                      <span className="text-xs text-slate-500 group-hover:text-slate-400 transition-colors">
+                        {item.label}
+                        <span className="ml-1 cursor-help opacity-30 hover:opacity-100" title="Limitación PWA: Datos orientativos basados en APIs web.">ⓘ</span>
+                      </span>
                       <div className="text-right">
                         <span className={cn(
                           "text-xs font-bold",
@@ -304,6 +495,23 @@ export default function App() {
                 </div>
               </motion.div>
             ))}
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-4 mb-8">
+            <button 
+              onClick={exportReport}
+              className="flex-1 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95"
+            >
+              <Download size={18} className="text-blue-400" />
+              <span className="text-sm font-bold">Exportar Informe JSON</span>
+            </button>
+            <button 
+              onClick={() => window.print()}
+              className="flex-1 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95"
+            >
+              <Share2 size={18} className="text-emerald-400" />
+              <span className="text-sm font-bold">Compartir Diagnóstico</span>
+            </button>
           </div>
 
           <div className="bg-blue-600/5 border border-blue-600/10 rounded-[2rem] p-8 flex flex-col md:flex-row gap-6 items-center">
@@ -560,9 +768,15 @@ export default function App() {
         </motion.button>
       )}
 
-      <footer className="max-w-5xl mx-auto mt-12 pb-8 text-center">
+      <footer className="max-w-5xl mx-auto mt-12 pb-8 text-center px-6">
+        <p className="text-slate-500 text-[10px] leading-relaxed mb-4 max-w-2xl mx-auto">
+          Esta PWA de diagnóstico técnico opera exclusivamente bajo las capacidades de las APIs web estándar. 
+          El usuario declara conocer que esta herramienta realiza diagnósticos en modo lectura, sin modificar archivos del sistema ni ejecutar comandos privilegiados. 
+          El técnico o propietario del equipo asume toda responsabilidad por cualquier acción derivada del uso de la información mostrada. 
+          No se garantiza la detección de vulnerabilidades avanzadas ni se reemplaza un antivirus nativo.
+        </p>
         <p className="text-slate-600 text-[10px] font-bold uppercase tracking-[0.3em]">
-          DroidGuard AI &copy; 2026 • Arquitectura de Privacidad Avanzada
+          DroidGuard AI &copy; 2026 • Diagnóstico Técnico Pro PWA
         </p>
       </footer>
     </div>
