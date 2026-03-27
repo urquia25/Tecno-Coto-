@@ -730,6 +730,63 @@ export default function App() {
                     </p>
                   </div>
                 )}
+
+                {/* Guía de Acción Técnica */}
+                <div className="space-y-4">
+                  <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Terminal size={14} className="text-emerald-400" />
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Guía de Acción Técnica</p>
+                    </div>
+                    <div className="space-y-3">
+                      {selectedProcess.riskLevel === 'Seguro' && (
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                          <span className="text-emerald-400 font-bold">✓ Acción:</span> Mantener bajo observación rutinaria. No requiere intervención inmediata. Verifique que el consumo de recursos sea proporcional a su uso activo.
+                        </p>
+                      )}
+                      {selectedProcess.riskLevel === 'Sospechoso' && (
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                          <span className="text-amber-400 font-bold">⚠ Acción:</span> Revise los permisos otorgados. Si la app no es esencial, considere <span className="text-white font-bold">"Forzar Detención"</span> o <span className="text-white font-bold">"Inhabilitar"</span>. Verifique si hay procesos de telemetría excesivos (como en el caso de métricas de redes sociales).
+                        </p>
+                      )}
+                      {selectedProcess.riskLevel === 'Crítico' && (
+                        <div className="space-y-3">
+                          <p className="text-xs text-red-400 font-bold leading-relaxed">
+                            ✖ Protocolo de Eliminación Persistente (Nivel Técnico):
+                          </p>
+                          <ol className="space-y-2 text-[11px] text-slate-400 list-decimal pl-4">
+                            <li><span className="text-white">Revocar Administración:</span> Ajustes &gt; Seguridad &gt; Apps de administración. Desactiva este paquete si aparece.</li>
+                            <li><span className="text-white">Limpiar Datos:</span> Ajustes &gt; Aplicaciones &gt; {selectedProcess.appName} &gt; Almacenamiento &gt; Borrar caché y datos.</li>
+                            <li><span className="text-white">Forzar Detención:</span> Detén el proceso antes de intentar desinstalarlo.</li>
+                            <li><span className="text-white">Desinstalar:</span> Intenta la desinstalación normal. Si falla, reinicia en <span className="text-amber-400 font-bold">Modo Seguro</span> y repite.</li>
+                            <li><span className="text-white">Verificar Persistencia:</span> Si el proceso reaparece tras el reinicio, es un rootkit o malware de sistema. Se requiere <span className="text-red-500 font-bold">Flash de Firmware</span> o <span className="text-red-500 font-bold">Hard Reset</span>.</li>
+                          </ol>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-white/5 rounded-2xl p-5 border border-white/5">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Smartphone size={14} className="text-blue-400" />
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">¿Cómo ubicarlo en el dispositivo?</p>
+                    </div>
+                    <ul className="space-y-2">
+                      <li className="text-[11px] text-slate-400 flex gap-2">
+                        <div className="w-1 h-1 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+                        <span>Ajustes &gt; Aplicaciones &gt; Ver todas las apps &gt; Buscar <span className="text-white font-mono">{selectedProcess.packageName}</span></span>
+                      </li>
+                      <li className="text-[11px] text-slate-400 flex gap-2">
+                        <div className="w-1 h-1 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+                        <span>Opciones de Desarrollador &gt; Servicios en ejecución (para ver procesos activos en RAM).</span>
+                      </li>
+                      <li className="text-[11px] text-slate-400 flex gap-2">
+                        <div className="w-1 h-1 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+                        <span>Ajustes &gt; Seguridad &gt; Apps de administración (si no permite desinstalar).</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
               </div>
 
               <div className="flex flex-col gap-3">
