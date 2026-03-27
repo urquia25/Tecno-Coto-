@@ -20,11 +20,12 @@ import {
   Hash,
   ChevronRight,
   AlertCircle,
-  Terminal
+  Terminal,
+  Wifi
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
-import { ProcessInfo, MOCK_PROCESSES, SECRET_CODES, SecretCode } from './types';
+import { ProcessInfo, MOCK_PROCESSES, SECRET_CODES, SecretCode, MOCK_DIAGNOSTICS, DiagnosticSection } from './types';
 
 export default function App() {
   const [processes, setProcesses] = useState<ProcessInfo[]>(MOCK_PROCESSES);
@@ -32,7 +33,7 @@ export default function App() {
   const [selectedProcess, setSelectedProcess] = useState<ProcessInfo | null>(null);
   const [vpnActive, setVpnActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'monitor' | 'tools'>('monitor');
+  const [activeTab, setActiveTab] = useState<'monitor' | 'tools' | 'diagnostico'>('monitor');
 
   const handleScan = () => {
     setIsScanning(true);
@@ -89,6 +90,15 @@ export default function App() {
               )}
             >
               Monitor
+            </button>
+            <button 
+              onClick={() => setActiveTab('diagnostico')}
+              className={cn(
+                "px-4 py-2 rounded-xl text-xs font-bold transition-all",
+                activeTab === 'diagnostico' ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "text-slate-500 hover:text-slate-300"
+              )}
+            >
+              Diagnóstico
             </button>
             <button 
               onClick={() => setActiveTab('tools')}
@@ -256,6 +266,61 @@ export default function App() {
             </div>
           </main>
         </>
+      ) : activeTab === 'diagnostico' ? (
+        <main className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {MOCK_DIAGNOSTICS.map((section, idx) => (
+              <motion.div
+                key={section.title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                className="glass-card rounded-[2rem] p-6 border border-white/5"
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                    {section.title === "Estado del Hardware" && <Cpu className="text-blue-400" size={20} />}
+                    {section.title === "Seguridad y Sistema" && <ShieldAlert className="text-purple-400" size={20} />}
+                    {section.title === "Conectividad" && <Wifi className="text-emerald-400" size={20} />}
+                  </div>
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">{section.title}</h3>
+                </div>
+
+                <div className="space-y-4">
+                  {section.items.map((item, i) => (
+                    <div key={i} className="flex justify-between items-center group">
+                      <span className="text-xs text-slate-500 group-hover:text-slate-400 transition-colors">{item.label}</span>
+                      <div className="text-right">
+                        <span className={cn(
+                          "text-xs font-bold",
+                          item.status === 'Normal' ? 'text-emerald-400' : 
+                          item.status === 'Advertencia' ? 'text-amber-400' : 'text-red-400'
+                        )}>
+                          {item.value}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="bg-blue-600/5 border border-blue-600/10 rounded-[2rem] p-8 flex flex-col md:flex-row gap-6 items-center">
+            <div className="w-16 h-16 rounded-2xl bg-blue-600/10 flex items-center justify-center shrink-0">
+              <Terminal className="text-blue-400" size={32} />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-white mb-2">Consideraciones Técnicas de Diagnóstico</h3>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Este panel proporciona una telemetría avanzada del estado del hardware y software. 
+                Los valores en <span className="text-amber-400 font-bold">Ámbar</span> sugieren degradación o configuraciones no óptimas, 
+                mientras que el <span className="text-red-400 font-bold">Rojo</span> indica fallos críticos que requieren intervención inmediata. 
+                Utilice esta información para determinar si el equipo requiere un cambio de componentes (batería/memoria) o una restauración de fábrica.
+              </p>
+            </div>
+          </div>
+        </main>
       ) : (
         <main className="max-w-5xl mx-auto space-y-8">
           {/* Guía de Detención de Procesos Críticos */}

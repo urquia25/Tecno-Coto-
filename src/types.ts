@@ -1,3 +1,44 @@
+export interface DiagnosticItem {
+  label: string;
+  value: string;
+  status: 'Normal' | 'Advertencia' | 'Crítico';
+}
+
+export interface DiagnosticSection {
+  title: string;
+  items: DiagnosticItem[];
+}
+
+export const MOCK_DIAGNOSTICS: DiagnosticSection[] = [
+  {
+    title: "Estado del Hardware",
+    items: [
+      { label: "Salud de Batería", value: "92% (Buena)", status: "Normal" },
+      { label: "Temperatura CPU", value: "38°C", status: "Normal" },
+      { label: "Almacenamiento", value: "85% Lleno", status: "Advertencia" },
+      { label: "Memoria RAM", value: "4.2GB / 8GB", status: "Normal" },
+    ]
+  },
+  {
+    title: "Seguridad y Sistema",
+    items: [
+      { label: "Acceso Root", value: "No Detectado", status: "Normal" },
+      { label: "Bootloader", value: "Bloqueado", status: "Normal" },
+      { label: "Opciones Desarrollador", value: "Activadas", status: "Advertencia" },
+      { label: "Parche de Seguridad", value: "1 de Marzo 2026", status: "Normal" },
+    ]
+  },
+  {
+    title: "Conectividad",
+    items: [
+      { label: "Señal Móvil", value: "-85 dBm (Excelente)", status: "Normal" },
+      { label: "Estado Wi-Fi", value: "Conectado (5GHz)", status: "Normal" },
+      { label: "DNS Firewall", value: "Protegido", status: "Normal" },
+      { label: "Latencia de Red", value: "45ms", status: "Normal" },
+    ]
+  }
+];
+
 export interface SecretCode {
   code: string;
   description: string;
@@ -32,7 +73,6 @@ export interface ProcessInfo {
   description: string;
   permissions: string[];
 }
-// ... rest of MOCK_PROCESSES remains the same
 
 export const MOCK_PROCESSES: ProcessInfo[] = [
   {
